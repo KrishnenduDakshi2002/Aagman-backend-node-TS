@@ -13,8 +13,8 @@ router.post('/api/v1/user/signup',[SanitizerMiddleware],signUp);
 router.post('/api/test',test);
 
 //event routes
-router.post('/api/v1/event/post',[SanitizerMiddleware],createEvent);
+router.post('/api/v1/event/post',[SanitizerMiddleware,UserAuthentication],createEvent);
 router.get('/api/v1/event/getAllEvents',getAllEvents);
-router.delete('/api/v1/event/delete',deleteEvent);
+router.delete('/api/v1/event/delete',[UserAuthentication],deleteEvent);
 
 export default router;

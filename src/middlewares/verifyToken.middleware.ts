@@ -21,7 +21,7 @@ export default async function UserAuthentication(req: Request, res: Response, ne
         const JWToken = req.headers.authorization?.split(" ")[1];
 
         if (typeof JWToken == 'undefined') {
-            return messageCustom(res,BAD_REQUEST,'Cookie Access Token not found',{});
+            return messageCustom(res,BAD_REQUEST,'token not present',{});
         } else {
             // token is not found
             if (!JWToken) return messageCustom(res,BAD_REQUEST,'Token is not found',{});
