@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import config from "config";
-// import bcrypt from 'bcryptjs';
-const bcrypt = require("bcrypt");
+import bcrypt from 'bcryptjs';
 
 import { messageCustom, messageError } from "../helpers/message";
 import {

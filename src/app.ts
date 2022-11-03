@@ -7,7 +7,7 @@ import connect from './db/connect';
 import helmet from 'helmet';
 
 //importing routers
-import UserRouter from './routes/user.route'
+import router from './routes/router';
 
 
 
@@ -28,4 +28,4 @@ app.listen(port,()=>{
     connect();  // making database connection
 });
 
-app.use(UserRouter);
+app.use(router);
