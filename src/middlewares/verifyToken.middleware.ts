@@ -37,7 +37,6 @@ export default async function UserAuthentication(req: Request, res: Response, ne
             if(!user) return messageCustom(res,BAD_REQUEST,"user doesn't exists",{});
 
             // Adding verified to req.body
-            req.body.UserStatus = "verified";
             req.body.UserId = user._id;
 
             // calling next function

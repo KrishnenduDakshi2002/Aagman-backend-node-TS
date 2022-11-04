@@ -17,6 +17,17 @@ import User from "../models/user.model";
 //validation
 import UserValidation from "../validations/user.validation";
 
+
+export async function verifyToken(req:Request,res: Response) {
+  try {
+      if (req.body.UserId !== undefined){
+        messageCustom(res,OK,"verified",{"status":"Authorized"});
+      }
+  } catch (error) {
+    messageError(res,SERVER_ERROR,"server error",error);
+  }
+}
+
 export async function login(req: Request, res: Response) {
   try {
     const { value, error } = UserValidation(req.body);

@@ -52,6 +52,8 @@ const EventSchema = new Schema({
     },
     imageUri : String,
     participant : Number
+},{
+    timestamps : true
 })
 
 export default model<EventInterface>('EventMode',EventSchema)
