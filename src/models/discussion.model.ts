@@ -20,7 +20,7 @@ export interface DiscussionInterface {
     description : String;
     author : ObjectId;
     postDate : String;
-    likes : String;
+    likes : Number;
     tags : Array<String>;
     answers : Array<AnswerInterface>;
 }
@@ -39,7 +39,7 @@ const DiscussionSchema = new Schema({
         ref : 'User',
         required : true
     },
-    likes : String,
+    likes : Number,
     tags : Array,
     answers : [
         {
