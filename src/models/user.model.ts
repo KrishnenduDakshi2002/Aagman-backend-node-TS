@@ -1,10 +1,12 @@
 
-import {Schema, model} from "mongoose";
+import mongoose, {Schema, model, ObjectId} from "mongoose";
 
 export interface UserInterface{
     userName : String;
     email: string;
     password : string;
+    questions: Array<ObjectId>;
+    answers : Array<ObjectId>;
     createdAt : string;
     updatedAt : string;
 }
@@ -21,7 +23,20 @@ const UserSchema = new Schema({
     password : {
         type: String,
         required : true,
-    }
+    },
+    questions:[
+        {
+            type : mongoose.Schema.Types.ObjectId,
+            ref : 'Discussion'
+        }
+    ],
+    answers :[
+        {
+            type : mongoose.Schema.Types.ObjectId,
+            ref : 'DiscussionAnswer'
+        }
+    ]
+
 },
 {
     timestamps : true
