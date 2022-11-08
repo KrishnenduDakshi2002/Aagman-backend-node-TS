@@ -2,7 +2,7 @@ import express from 'express';
 import config from 'config';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-
+import http from 'http';
 import connect from './db/connect';
 import helmet from 'helmet';
 
@@ -10,7 +10,7 @@ import helmet from 'helmet';
 import router from './routes/router';
 
 
-
+const hostname = config.get('HOSTNAME') as string;
 const port = config.get('PORT') as number;  // PORT number can be changed from config directory
 const app = express();
 
@@ -22,10 +22,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(helmet());
 
-app.listen(port,()=>{
+app.use(router);
 
-    console.log(`server running at http://localhost:${port}`);
+
+const server = http.createServer(app);
+server.listen(port,hostname,()=>{
+    console.log(`server running at http://${hostname}:${port}`);
     connect();  // making database connection
 });
-
-app.use(router);
