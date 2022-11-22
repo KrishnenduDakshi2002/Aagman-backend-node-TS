@@ -1,6 +1,6 @@
 import express from 'express';
 import { createCollabPost, deleteCollabPost, getAllCollabPosts } from '../controllers/collaborate.controller';
-import { createQuestion, dataEntry, deleteQuestion, getAllAnswers, getAllQuestions, postAnswer, searchByTags, updateLike, updateQuestion } from '../controllers/discussion.controller';
+import { createQuestion, dataEntry, deleteQuestion, fuzzySearch, getAllAnswers, getAllQuestions, postAnswer, searchByTags, updateLike, updateQuestion } from '../controllers/discussion.controller';
 import { createEvent, deleteEvent, getAllEvents } from '../controllers/event.controller';
 import { login, signUp, test, verifyToken } from '../controllers/user.controller';
 import SanitizerMiddleware from '../middlewares/sanitizer.middleware';
@@ -8,6 +8,10 @@ import UserAuthentication from '../middlewares/verifyToken.middleware';
 
 
 const router = express.Router();
+//home
+router.get('/',(req,res)=>{
+    res.json('Welcome to Aagman Backend')
+})
 
 //user routes
 router.get('/api/v1/user/verifyToken',[UserAuthentication],verifyToken);
@@ -23,6 +27,7 @@ router.delete('/api/v1/event/delete',[UserAuthentication],deleteEvent);
 //discussion routes
 router.post('/api/v1/discussion/question/post',[UserAuthentication],createQuestion);
 router.get('/api/v1/discussion/question/getAll',getAllQuestions);
+router.post('/api/v1/discussion/question/search',[SanitizerMiddleware],fuzzySearch);
 router.patch('/api/v1/discussion/question/update',[UserAuthentication],updateQuestion);
 router.patch('/api/v1/discussion/question/update/likes',[UserAuthentication],updateLike);
 router.delete('/api/v1/discussion/question/delete',[UserAuthentication],deleteQuestion);

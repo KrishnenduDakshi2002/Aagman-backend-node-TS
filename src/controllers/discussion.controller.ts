@@ -1,6 +1,8 @@
 import { Response, Request } from "express";
 import mongoose from "mongoose";
 
+import Fuse from "fuse.js";
+
 import { messageCustom, messageError } from "../helpers/message";
 import {
   OK,
@@ -65,6 +67,22 @@ export async function getAllAnswers(req: Request, res: Response) {
     messageError(res, SERVER_ERROR, "server error", error);
   }
 }
+
+export async function fuzzySearch(req: Request, res: Response) {
+  try {
+  const questions = await DiscussionModel.find({});
+  const options = {
+    includeScore : true,
+    keys : ["question","tags"]
+  }
+  const fuse = new Fuse(questions,options);
+  const {searchText} = req.body;
+  const result = fuse.search(searchText);
+    messageCustom(res, OK, "OK",result);
+  } catch (error) {
+    messageError(res, SERVER_ERROR, "server error", error);
+  }
+}
 export async function searchByTags(req: Request, res: Response) {
   try {
   const {tags} = req.body;
@@ -91,7 +109,8 @@ export async function deleteQuestion(req: Request, res: Response) {
     const questionId = new mongoose.Types.ObjectId(req.body.questionId);
     //deleting all answers within question
     const question = await DiscussionModel.findOne({_id: questionId});
-    if(!question) messageCustom(res,BAD_REQUEST,"question not present",question);
+    console.log(question);
+  if(!question){ messageCustom(res,BAD_REQUEST,"question not present",question); return;};
     question?.answers.map(async answerId=>{
       // remove the answers from answers array in user
       await User.findOneAndUpdate({answers : {$in : [answerId]}},{$pull : {answers : {$in : [answerId]}}});
