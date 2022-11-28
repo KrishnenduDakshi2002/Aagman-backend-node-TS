@@ -33,17 +33,35 @@ export async function getAllQuestions(req: Request, res: Response) {
     messageError(res, SERVER_ERROR, "server error", error);
   }
 }
+export async function getQuestion(req: Request, res: Response) {
+  try {
+    const questionId = req.query.questionId as string;
+    const id = new mongoose.Types.ObjectId(questionId);
+    const question = await DiscussionModel.findById(id).populate([
+      { path: "author", select: "userName" },
+      {
+        path:"answers",
+        populate:{
+          path: "author",select:"userName"
+        }
+      }
+    ]);
+    messageCustom(res, OK, "OK", question);
+  } catch (error) {
+    messageError(res, SERVER_ERROR, "server error", error);
+  }
+}
 
 export async function postAnswer(req: Request, res: Response) {
   try {
     const { UserId, questionId, ...body } = req.body;
     const _id = new mongoose.Types.ObjectId(UserId);
     const Question_id = new mongoose.Types.ObjectId(questionId);
-    const answer = await new AnswerModel({ ...body, author: _id }).save();
+    const answer = await new AnswerModel({ ...body,likes:0, author: _id }).save();
     await DiscussionModel.findByIdAndUpdate(Question_id, {
       $addToSet: { answers: answer._id },
     });
-    await User.findByIdAndUpdate(_id,{$addToSet :  { answers : answer._id}})
+    await User.findByIdAndUpdate(_id, { $addToSet: { answers: answer._id } });
     messageCustom(res, CREATED, "answer posted", { answerId: answer._id });
   } catch (error) {
     messageError(res, SERVER_ERROR, "server error", error);
@@ -52,12 +70,12 @@ export async function postAnswer(req: Request, res: Response) {
 
 export async function getAllAnswers(req: Request, res: Response) {
   try {
-    const page = +(req.query.page as string)-1;
+    const page = +(req.query.page as string) - 1;
     const limit = +(req.query.limit as string);
     const { questionId, ...body } = req.body;
     const Question_id = new mongoose.Types.ObjectId(questionId);
     const answers = await DiscussionModel.findById(Question_id)
-      .sort({'createdAt':-1})
+      .sort({ createdAt: -1 })
       .skip(page * limit)
       .limit(limit)
       .populate({ path: "answers" })
@@ -70,24 +88,24 @@ export async function getAllAnswers(req: Request, res: Response) {
 
 export async function fuzzySearch(req: Request, res: Response) {
   try {
-  const questions = await DiscussionModel.find({});
-  const options = {
-    includeScore : true,
-    keys : ["question","tags"]
-  }
-  const fuse = new Fuse(questions,options);
-  const {searchText} = req.body;
-  const result = fuse.search(searchText);
-    messageCustom(res, OK, "OK",result);
+    const questions = await DiscussionModel.find({});
+    const options = {
+      includeScore: true,
+      keys: ["question", "tags"],
+    };
+    const fuse = new Fuse(questions, options);
+    const { searchText } = req.body;
+    const result = fuse.search(searchText);
+    messageCustom(res, OK, "OK", result);
   } catch (error) {
     messageError(res, SERVER_ERROR, "server error", error);
   }
 }
 export async function searchByTags(req: Request, res: Response) {
   try {
-  const {tags} = req.body;
-  const questions = await DiscussionModel.find({tags : {$in: tags}})
-    messageCustom(res, OK, "OK",questions);
+    const { tags } = req.body;
+    const questions = await DiscussionModel.find({ tags: { $in: tags } });
+    messageCustom(res, OK, "OK", questions);
   } catch (error) {
     messageError(res, SERVER_ERROR, "server error", error);
   }
@@ -96,8 +114,14 @@ export async function createQuestion(req: Request, res: Response) {
   try {
     const { UserId, ...body } = req.body;
     const _id = new mongoose.Types.ObjectId(UserId);
-    const question = await new DiscussionModel({ ...body, author: _id }).save();
-    await User.findByIdAndUpdate(_id,{$addToSet :  { questions : question._id}})
+    const question = await new DiscussionModel({
+      ...body,
+      likes: 0,
+      author: _id,
+    }).save();
+    await User.findByIdAndUpdate(_id, {
+      $addToSet: { questions: question._id },
+    });
     messageCustom(res, CREATED, "question created", { _id: question._id });
   } catch (error) {
     messageError(res, SERVER_ERROR, "server error", error);
@@ -105,23 +129,33 @@ export async function createQuestion(req: Request, res: Response) {
 }
 export async function deleteQuestion(req: Request, res: Response) {
   try {
-    const {UserId} = req.body;
+    const { UserId } = req.body;
     const questionId = new mongoose.Types.ObjectId(req.body.questionId);
     //deleting all answers within question
-    const question = await DiscussionModel.findOne({_id: questionId});
+    const question = await DiscussionModel.findOne({ _id: questionId });
     console.log(question);
-  if(!question){ messageCustom(res,BAD_REQUEST,"question not present",question); return;};
-    question?.answers.map(async answerId=>{
+    if (!question) {
+      messageCustom(res, BAD_REQUEST, "question not present", question);
+      return;
+    }
+    question?.answers.map(async (answerId) => {
       // remove the answers from answers array in user
-      await User.findOneAndUpdate({answers : {$in : [answerId]}},{$pull : {answers : {$in : [answerId]}}});
+      await User.findOneAndUpdate(
+        { answers: { $in: [answerId] } },
+        { $pull: { answers: { $in: [answerId] } } }
+      );
       // deleting answers
       await AnswerModel.findByIdAndDelete(answerId);
-    })
+    });
     // // removing question from user
-    const response = await User.findByIdAndUpdate(UserId,{$pull :{ questions : {$in:[questionId]}}})
+    const response = await User.findByIdAndUpdate(UserId, {
+      $pull: { questions: { $in: [questionId] } },
+    });
     // // deleting the question
-    const deleteResponse = await DiscussionModel.deleteOne({_id: question?._id})
-    messageCustom(res,OK,'deleted',deleteResponse);
+    const deleteResponse = await DiscussionModel.deleteOne({
+      _id: question?._id,
+    });
+    messageCustom(res, OK, "deleted", deleteResponse);
   } catch (error) {
     messageError(res, SERVER_ERROR, "server error", error);
   }
@@ -129,16 +163,16 @@ export async function deleteQuestion(req: Request, res: Response) {
 
 export async function updateQuestion(req: Request, res: Response) {
   try {
-    const {UserId} = req.body;
+    const { UserId } = req.body;
     const questionId = new mongoose.Types.ObjectId(req.body.questionId);
     const _id = new mongoose.Types.ObjectId(UserId);
-    await DiscussionModel.findByIdAndUpdate(questionId,{
-      question : req.body.question,
-      description : req.body.description,
-      tags : req.body.tags,
-      author : _id
-    })
-    messageCustom(res,OK,"updated",{});
+    await DiscussionModel.findByIdAndUpdate(questionId, {
+      question: req.body.question,
+      description: req.body.description,
+      tags: req.body.tags,
+      author: _id,
+    });
+    messageCustom(res, OK, "updated", {});
   } catch (error) {
     messageError(res, SERVER_ERROR, "server error", error);
   }
@@ -147,21 +181,21 @@ export async function updateQuestion(req: Request, res: Response) {
 export async function updateLike(req: Request, res: Response) {
   try {
     const questionId = new mongoose.Types.ObjectId(req.body.questionId);
-    const question = await DiscussionModel.updateOne({_id: questionId},{$inc :{likes : +req.body.count}})
-    messageCustom(res,OK,'updated',question);
+    const question = await DiscussionModel.updateOne(
+      { _id: questionId },
+      { $inc: { likes: +req.body.count } }
+    );
+    messageCustom(res, OK, "updated", question);
   } catch (error) {
     messageError(res, SERVER_ERROR, "server error", error);
   }
 }
 
-
-
-export async function dataEntry(req:Request,res: Response) {
-    try {
-       const answerId = new mongoose.Types.ObjectId(req.body.answerId);
-       const user = await User.findOneAndUpdate({answers : {$in : [answerId]}},{$pull : {answers : {$in : [answerId]}}});
-       messageCustom(res,OK,'updated',user);
-    } catch (error: any) {
-      throw new Error(error);
-    }
+export async function dataEntry(req: Request, res: Response) {
+  try {
+    const answers = await AnswerModel.find({}).updateMany({likes: 55});
+    messageCustom(res, OK, "updated",{ans : answers});
+  } catch (error: any) {
+    messageError(res,SERVER_ERROR,"server error",error)
+  }
 }

@@ -1,4 +1,5 @@
 
+import { number } from "joi";
 import mongoose, { Schema,model,ObjectId } from "mongoose";
 
 
@@ -9,6 +10,7 @@ export interface CommentInterface {
     date : String
 }
 export interface AnswerInterface {
+    likes : number;
     answer : String;
     author : ObjectId;
     date : String;
@@ -60,6 +62,7 @@ const AnswerSchema = new Schema({
         type : Schema.Types.ObjectId,
         ref : 'User'
     },
+    likes : Schema.Types.Number,
     comments : [
         {
             type : Schema.Types.ObjectId,
